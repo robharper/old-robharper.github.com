@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Archives: 2013/3 | Rob Harper</title>
+  <meta name="author" content="Rob Harper">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Rob Harper"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Rob Harper" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-41144196-1', 'http://robharper.github.io');
+  ga('send', 'pageview');
+
+</script>
+
+</head>
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h2><a href="/">Rob Harper</a></h2>
+  <h3><a href="/"></a></h3>
+</div>
+<div class="alignright" style="margin-top: 15px">
+
+  <a href="https://twitter.com/rdharper"><div class="outlink twitter"></div></a>
+
+
+  <a href="https://github.com/robharper"><div class="outlink github"></div></a>
+
+</div>
+<nav id="main-nav">
+  <ul>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="wrapper">
+<h2 class="archive-title">2013/3</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+  
+    <h1 class="title"><a href="/2013/03/30/2013-03-30-embers-outlet/">Ember's {{outlet}}</a></h1>
+  
+
+      
+        <p class="published">
+          <time datetime="2013-03-30T17:43:00.000Z">Mar 30 2013</time>
+        </p>
+      
+    </header>
+    <div class="entry">
+      
+        <p>While Ember&#39;s convention over configuration often provides the desired result out of the box, I often find myself needing to dig into the Ember source to find out what&#39;s really happening behind the wizard&#39;s curtain.</p>
+<p>The handlebars <code>{{outlet}}</code> helper is typically used to specify the location at which the views of child routes will render into a parent route&#39;s template:</p>
+<figure class="highlight lang-html"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre>&lt;header&gt;
+  Some content
+&lt;/header&gt;
+{{outlet}}
+&lt;footer&gt;
+  Some other content
+&lt;/footer&gt;
+</pre></td></tr></table></figure>
+
+<p>Behind the scenes, the <code>{{outlet}}</code> helper does the following:</p>
+<ol>
+<li><p>Finds the top-level view associated with the route - the <code>outletSource</code>.</p>
+<p>For example, if the outlet is somewhere within the content rendered in the <code>application</code> template, the helper must traverse the view hierarchy to find the instance of the <code>ApplicationView</code>.</p>
+</li>
+<li><p>Inserts a new <a href="http://emberjs.com/api/classes/Ember.ContainerView.html"><code>ContainerView</code></a> at the location of the <code>{{outlet}}</code>.</p>
+<p> In reality, Ember uses a <a href="http://emberjs.com/api/classes/Ember._Metamorph.html"><code>Ember._Metamorph</code></a> extension of a ContainerView. The metamorph view is <em>virtual</em>, preventing the view from appearing in the <code>childViews</code> / <code>parentView</code> hierarchy, and it doesn&#39;t create a DOM element (it uses a <a href="https://github.com/tomhuda/metamorph.js/">metamorph</a>), so any template rendered into the outlet appears precisely in place of <code>{{outlet}}</code> helper without a wrapping element.  Here&#39;s a fiddle that shows <a href="http://jsfiddle.net/rharper/bzga8/4/">how mixing in _Metamorph affects how a ContainerView works</a></p>
+</li>
+<li><p>Binds the <code>currentView</code> property of this ContainerView to the view under a named key in the <code>outletSource</code>&#39;s <code>_outlets</code> hash.</p>
+<p> Unless the outlet is explicitly given a name it gets the name <code>main</code>. In this case, the currentView is bound to <code>outletSource._outlets.main</code>. When the view the _outlets hash is changed, Ember automatically updates the view in the outlet through the magic of bindings.</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+<!-- hackish -->
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 Rob Harper
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<script type="text/javascript">
+(function(){
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+}());
+</script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

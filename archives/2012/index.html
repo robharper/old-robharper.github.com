@@ -1,0 +1,152 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Archives: 2012 | Rob Harper</title>
+  <meta name="author" content="Rob Harper">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Rob Harper"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Rob Harper" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-41144196-1', 'http://robharper.github.io');
+  ga('send', 'pageview');
+
+</script>
+
+</head>
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h2><a href="/">Rob Harper</a></h2>
+  <h3><a href="/"></a></h3>
+</div>
+<div class="alignright" style="margin-top: 15px">
+
+  <a href="https://twitter.com/rdharper"><div class="outlink twitter"></div></a>
+
+
+  <a href="https://github.com/robharper"><div class="outlink github"></div></a>
+
+</div>
+<nav id="main-nav">
+  <ul>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="wrapper">
+<h2 class="archive-title">2012</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+  
+    <h1 class="title"><a href="/2012/05/18/2012-05-18-building-simple-javascript-libraries-with-rake-pipeline/">Building simple JavaScript libraries with Rake-Pipeline</a></h1>
+  
+
+      
+        <p class="published">
+          <time datetime="2012-05-18T17:07:00.000Z">May 18 2012</time>
+        </p>
+      
+    </header>
+    <div class="entry">
+      
+        <p><em>Cross-posted from <a href="http://blog.nulayer.com/post/23294069876/building-simple-javascript-libraries-with-rake-pipeline">blog.nulayer.com</a></em></p>
+<p>At Nulayer we try to write very modular JavaScript, which allows us to be flexible and re-use those libraries in other projects. But we’ve had difficulty structuring a build process for these small- to medium-sized JavaScript library projects, while meeting the following objectives:</p>
+<ol>
+<li>Break it up: While it’s common to write smaller libraries as one big file, we like the mental separation provided by dividing the source into multiple files.</li>
+<li>Inline dependency management: We’d rather define each file’s dependencies right in the code than define the concatenation order in some sort of makefile.</li>
+<li>Keep files separate while debugging: When we’re setting breakpoints and stepping through code in the debugger we want to see our individual source files, not have to wade through one big file.</li>
+<li>A transparent solution: We need the production library to be free from dependency management code.</li>
+</ol>
+<p>A year ago, I tried to satisfy our objectives using @jrburke’s require.js. It gave me the multiple source files with dependency management and excellent seamless development (with separate files) and production (combined and minified) environments that I was looking for. Unfortunately at the time, and things may have changed in a year, compiling requirejs out for the production build was not easy. I could get it down to a bare-bones set of require and define functions but it was still there. Requirejs is excellent for large JS projects and I ended up using it extensively for other work but it wasn’t quite the right fit for making a smaller library.</p>
+<p>Via the Ember.js project I was introduced to livingsocal’s <a href="https://github.com/livingsocial/rake-pipeline">rake-pipeline</a> with @wycats’ <a href="https://github.com/wycats/rake-pipeline-web-filters">rake-pipeline-web-filters</a> and <a href="https://github.com/wycats/minispade">minispade</a>. With this combination I can prefix my source files with minispade “require” calls and satisfy objectives #1 and #2. The minispade filter for rake-pipeline can optionally encode and your source as strings, add a @sourceURL annotation and eval at run-time. In Webkit and Firefox the script debugger will show each eval’d block as a separate file, satisfying objective #3. But minispade is still required.</p>
+<p>@wagenet’s addition of the neuter filter goes a long way to satisfying all four requirements. Neuter will determine the correct ordering of all source files and concatenate them into a single file. This is great for a production build as it means minispade is not required. So by using minispade in development and neuter in production, I can meet all four of our project organization objectives… almost.</p>
+<p>One of the side-effects of using minispade is that all modules are evaluated within their own closure. This is great if everything that the module needs to share with other modules is exposed through a common global namespace (as in Ember.js) but it’s problematic if I want to define library-wide functions and variables that I don’t want to expose publicly. In my case, I had some helper functions that I put in a common module that was required by a number of other modules in my library. In the neutered production output everything is fine since all modules are appended as-is and can be wrapped in one big shared closure. But in development I was out of luck.</p>
+<p>My solution was to use a modified version of the neuter filter that either outputs the raw code (in production) or outputs eval’d strings of the code with @sourceURL annotations (in development). This simple change allows me to satisfy all four of my requirements with very little work.</p>
+<p>Here is a snippet of a rake-pipeline Assetfile that can be switched between production vs. development followed by the modified neuter filter (my changes mostly in output_source):</p>
+<script src="https://gist.github.com/2712617.js"></script>
+
+<p>Using rake-pipeline with a modified neuter filter makes it easy to structure, build, and debug JS projects that use multiple source files with dependencies specified right in the code.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+<!-- hackish -->
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 Rob Harper
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<script type="text/javascript">
+(function(){
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+}());
+</script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
