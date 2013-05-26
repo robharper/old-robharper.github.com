@@ -40,7 +40,7 @@
   <h2><a href="/">Rob Harper</a></h2>
   <h3><a href="/"></a></h3>
 </div>
-<div class="alignright" style="margin-top: 15px">
+<div class="alignright">
 
   <a href="https://twitter.com/rdharper"><div class="outlink twitter"></div></a>
 
@@ -56,12 +56,78 @@
 </nav>
 <div class="clearfix"></div>
 
-<div class="clearfix"></div>
 </header>
   <div id="content" class="inner">
     <div id="wrapper">
 <h2 class="archive-title">Archives</h2>
 
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+  
+    <h1 class="title"><a href="/2013/05/26/2013-05-26-avoiding-reflows-using-embers-runloop/">Avoiding Reflows using Ember's Run Loop</a></h1>
+  
+
+      
+        <p class="published">
+          <time datetime="2013-05-26T18:54:08.000Z">May 26 2013</time>
+        </p>
+      
+    </header>
+    <div class="entry">
+      
+        <p>Most of the work I do day-to-day is targeted at mobile devices. While it&#39;s <a href="http://www.stubbornella.org/content/2009/03/27/reflows-repaints-css-performance-making-your-javascript-slow/">no secret</a> that <a href="http://mir.aculo.us/2010/08/17/when-does-javascript-trigger-reflows-and-rendering/">avoiding excessive reflows</a> is important for performance, it is absolutely essential on mobile, particularly on older devices. </p>
+<p>Simply put, document changes that affect element geometry invalidate some or all of the <a href="http://www.phpied.com/rendering-repaint-reflowrelayout-restyle/">page layout</a>. If an invalidating change is followed by a read from the computed style of an affected node, the browser is forced to synchronously recalculate the layout. This takes time. For example:</p>
+<figure class="highlight lang-javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; elements.length; i++) {
+  <span class="keyword">var</span> height = elements[i].clientHeight;
+  elements[i].style.height = (height % <span class="number">20</span>) + <span class="string">'px'</span>;
+}
+</pre></td></tr></table></figure>
+
+<p>The change to element <code>i</code>s height invalidates the layout. When the <code>clientHeight</code> of element <code>i+1</code> is requested the browser must recalculate the layout before returning a value. Depending on the number of elements and complexity of the DOM and styling, this loop can chew up hundreds of milliseconds and ruin the user experience.</p>
+<p>While it&#39;s fairly easy to de-interleave the reads and writes to avoid forced layouts in the above example, it is slightly more complex when working with a collection of disparate Ember views. </p>
+<p>Take for example a <code>CollectionView</code> with many child views, each which reads and then modifies a few element style properties on <code>didInsertElement</code>. A naive approach would have each view read and then write, effectively reproducing the costly relayout loop shown above. Another approach would be to orchestrate the work using the parent view, but this would break encapsulation.</p>
+<p>A simple and effective approach uses the Ember <a href="http://stackoverflow.com/a/14296339/1204216">run loop</a>. First, do all necessary calculated style reads during <code>didInsertElement</code>. It executes in the <em>&quot;render&quot;</em> queue of the run loop. Second, defer all writes into a later queue, say the <em>&quot;afterRender&quot;</em> queue.</p>
+<figure class="highlight lang-javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre>didInsertElement: <span class="keyword">function</span>() {
+  <span class="keyword">var</span> element = <span class="keyword">this</span>.get(<span class="string">'element'</span>);
+  <span class="keyword">var</span> originalHeight = element.clientHeight;
+  Ember.run.scheduleOnce(<span class="string">'afterRender'</span>, <span class="keyword">function</span>() {
+    element.style.height = (originalHeight % <span class="number">20</span>) + <span class="string">'px'</span>;
+  });
+}
+</pre></td></tr></table></figure>
+
+<p>This is an easy way to perform all reads followed by all invalidating writes while remaining in a single browser event loop execution. It can optimize what normally would be one reflow per view down to a single reflow for all views.</p>
+<h2>TL;DR</h2>
+<p>To avoid excessive reflows across your Ember views, perform computed style reads as needed but defer all writes to a later stage of the run loop.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+<!-- hackish -->
 
   
     <article class="post">

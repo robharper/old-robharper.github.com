@@ -3,13 +3,49 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Archives: 2013 | Rob Harper</title>
+  <title>Avoiding Reflows using Ember's Run Loop | Rob Harper</title>
   <meta name="author" content="Rob Harper">
+  
+  <meta name="description" content="Most of the work I do day-to-day is targeted at mobile devices. While it&amp;#39;s no secret that avoiding excessive reflows is important for performance, it is absolutely essential on mobile, particularly on older devices. 
+Simply put, document changes that affect element geometry invalidate some or all of the page layout. If an invalidating change is followed by a read from the computed style of an affected node, the browser is forced to synchronously recalculate the layout. This takes time. For example:
+1
+2
+3
+4
+for (var i = 0; i &lt; elements.length; i++) {
+  var height = elements[i].clientHeight;
+  elements[i].style.height = (height % 20) + 'px';
+}
+
+
+The change to element is height invalidates the layout. When the clientHeight of element i+1 is requested the browser must recalculate the layout before returning a value. Depending on the number of elements and complexity of the DOM and styling, this loop can chew up hundreds of milliseconds and ruin the user experience.
+While it&amp;#39;s fairly easy to de-interleave the reads and writes to avoid forced layouts in the above example, it is slightly more complex when working with a collection of disparate Ember views. 
+Take for example a CollectionView with many child views, each which reads and then modifies a few element style properties on didInsertElement. A naive approach would have each view read and then write, effectively reproducing the costly relayout loop shown above. Another approach would be to orchestrate the work using the parent view, but this would break encapsulation.
+A simple and effective approach uses the Ember run loop. First, do all necessary calculated style reads during didInsertElement. It executes in the &quot;render&quot; queue of the run loop. Second, defer all writes into a later queue, say the &quot;afterRender&quot; queue.
+1
+2
+3
+4
+5
+6
+7
+didInsertElement: function() {
+  var element = this.get('element');
+  var originalHeight = element.clientHeight;
+  Ember.run.scheduleOnce('afterRender', function() {
+    element.style.height = (originalHeight % 20) + 'px';
+  });
+}
+
+
+This is an easy way to perform all reads followed by all invalidating writes while remaining in a single browser event loop execution. It can optimize what normally would be one reflow per view down to a single reflow for all views.
+TL;DR
+To avoid excessive reflows across your Ember views, perform computed style reads as needed but defer all writes to a later stage of the run loop.">
   
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  
+  <meta property="og:title" content="Avoiding Reflows using Ember's Run Loop"/>
   <meta property="og:site_name" content="Rob Harper"/>
 
   
@@ -58,18 +94,13 @@
 
 </header>
   <div id="content" class="inner">
-    <div id="wrapper">
-<h2 class="archive-title">2013</h2>
-
-
-  
-    <article class="post">
+    <div id="wrapper"><article class="post">
   
   <div class="post-content">
     <header>
       
   
-    <h1 class="title"><a href="/2013/05/26/2013-05-26-avoiding-reflows-using-embers-runloop/">Avoiding Reflows using Ember's Run Loop</a></h1>
+    <h1 class="title">Avoiding Reflows using Ember's Run Loop</h1>
   
 
       
@@ -120,9 +151,6 @@
     </div>
     <footer>
       
-        
-        
-      
       <div class="clearfix"></div>
     </footer>
   </div>
@@ -130,74 +158,6 @@
 <!-- hackish -->
 
   
-    <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-  
-    <h1 class="title"><a href="/2013/03/30/2013-03-30-embers-outlet/">Ember's {{outlet}}</a></h1>
-  
-
-      
-        <p class="published">
-          <time datetime="2013-03-30T17:43:00.000Z">Mar 30 2013</time>
-        </p>
-      
-    </header>
-    <div class="entry">
-      
-        <p>While Ember&#39;s convention over configuration often provides the desired result out of the box, I often find myself needing to dig into the Ember source to find out what&#39;s really happening behind the wizard&#39;s curtain.</p>
-<p>The handlebars <code>{{outlet}}</code> helper is typically used to specify the location at which the views of child routes will render into a parent route&#39;s template:</p>
-<figure class="highlight lang-html"><table><tr><td class="gutter"><pre>1
-2
-3
-4
-5
-6
-7
-</pre></td><td class="code"><pre>&lt;header&gt;
-  Some content
-&lt;/header&gt;
-{{outlet}}
-&lt;footer&gt;
-  Some other content
-&lt;/footer&gt;
-</pre></td></tr></table></figure>
-
-<p>Behind the scenes, the <code>{{outlet}}</code> helper does the following:</p>
-<ol>
-<li><p>Finds the top-level view associated with the route - the <code>outletSource</code>.</p>
-<p>For example, if the outlet is somewhere within the content rendered in the <code>application</code> template, the helper must traverse the view hierarchy to find the instance of the <code>ApplicationView</code>.</p>
-</li>
-<li><p>Inserts a new <a href="http://emberjs.com/api/classes/Ember.ContainerView.html"><code>ContainerView</code></a> at the location of the <code>{{outlet}}</code>.</p>
-<p> In reality, Ember uses a <a href="http://emberjs.com/api/classes/Ember._Metamorph.html"><code>Ember._Metamorph</code></a> extension of a ContainerView. The metamorph view is <em>virtual</em>, preventing the view from appearing in the <code>childViews</code> / <code>parentView</code> hierarchy, and it doesn&#39;t create a DOM element (it uses a <a href="https://github.com/tomhuda/metamorph.js/">metamorph</a>), so any template rendered into the outlet appears precisely in place of <code>{{outlet}}</code> helper without a wrapping element.  Here&#39;s a fiddle that shows <a href="http://jsfiddle.net/rharper/bzga8/4/">how mixing in _Metamorph affects how a ContainerView works</a></p>
-</li>
-<li><p>Binds the <code>currentView</code> property of this ContainerView to the view under a named key in the <code>outletSource</code>&#39;s <code>_outlets</code> hash.</p>
-<p> Unless the outlet is explicitly given a name it gets the name <code>main</code>. In this case, the currentView is bound to <code>outletSource._outlets.main</code>. When the view the _outlets hash is changed, Ember automatically updates the view in the outlet through the magic of bindings.</p>
-</li>
-</ol>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-<!-- hackish -->
-
-  
-
-  <nav id="pagination">
-  
-  
-  <div class="clearfix"></div>
-</nav>
 </div>
     <div class="clearfix"></div>
   </div>
