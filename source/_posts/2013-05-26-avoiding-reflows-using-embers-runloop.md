@@ -18,7 +18,7 @@ The change to element `i`s height invalidates the layout. When the `clientHeight
 
 While it's fairly easy to de-interleave the reads and writes to avoid forced layouts in the above example, it is slightly more complex when working with a collection of disparate Ember views. 
 
-Take for example a `CollectionView` with many child views, each which reads and then modifies a few element style properties on `didInsertElement`. A naive approach would have each view read and then write, effectively reproducing the costly relayout loop shown above. Another approach would be to orchestrate the work using the parent view, but this would break encapsulation.
+Take for example a `CollectionView` with many child views, each which reads and then modifies a few element style properties on `didInsertElement`. A naive approach would be to orchestrate batching reads and writes using the parent view, but this would break encapsulation. Another approach would be to allow each view to read computed styles on insertion but defer writes using `setTimeout(..., 0)`. However, this would return control to the browser before the changes are applied and could cause a flash of partially/incorrectly styled content.
 
 A simple and effective approach uses the Ember [run loop](http://stackoverflow.com/a/14296339/1204216). First, do all necessary calculated style reads during `didInsertElement`. It executes in the *"render"* queue of the run loop. Second, defer all writes into a later queue, say the *"afterRender"* queue.
 
